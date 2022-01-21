@@ -103,7 +103,7 @@ def get_host_by_host_number(hn, db_file_name="sshc_db.json"):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='SSH Config Generator !')
+    parser = argparse.ArgumentParser(description='SSH Config and Ansible Inventory Generator !')
     mg1 = parser.add_mutually_exclusive_group(required=True)
 
     mg1.add_argument("--init", choices=["yes", "no"], help="Initialize DB?")
