@@ -117,7 +117,7 @@ if __name__ == "__main__":
     parser.add_argument('--idf', help='SSH Identity File?', default="/Users/fahad/.ssh/id_rsa")
     parser.add_argument('--comment', help='SSH Identity File?', default="No Comment.")
     parser.add_argument('--configfile', help='SSH Config File?', default="/Users/fahad/.ssh/config")
-    parser.add_argument('--groups', help='Which group to include?', default=[])
+    parser.add_argument('--groups',  nargs='+', help='Which group to include?', default=[])
 
     parser.add_argument("--hn", help="Which Host by giving Host Number?")
 
@@ -170,7 +170,7 @@ if __name__ == "__main__":
             for i in the_data:
                 groups += i.get("groups", [])
                 all_hosts[i.get("name")] = {
-                    "ansible_host": i.get("host"),
+                    "ansible_host": i.get("name"),
                     "ansible_port": i.get("port"),
                     "ansible_user": i.get("user"),
                     "ansible_ssh_private_key_file": i.get("idf")
