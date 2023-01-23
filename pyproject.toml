@@ -1,13 +1,13 @@
 [tool.poetry]
 name = "sshc"
-version = "0.2.0"
+version = "0.3.0"
 description = "SSH Config and Ansible Inventory Generator."
 authors = ["fahadahammed <iamfahadahammed@gmail.com>"]
 license = "MIT"
 readme = "README.md"
-homepage = "https://sshc.fahadahammed.com/"
+homepage = "https://github.com/fahadahammed/sshc"
 repository = "https://github.com/fahadahammed/sshc"
-documentation = "https://sshc.fahadahammed.com/docs/"
+documentation = "https://github.com/fahadahammed/sshc"
 keywords = ["packaging", "poetry"]
 classifiers = [
     "Environment :: Console",
