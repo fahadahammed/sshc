@@ -10,44 +10,50 @@ This tool should help you manage ssh config file with hosts as well as ansible h
 ```
 
 ```bash
-usage: sshc.py [-h] (--init {yes,no} | --insert {yes,no} | --read {yes,no} | --generate {yes,no})
-               [--name NAME] [--host HOST] [--user USER] [--port PORT] [--idf IDF]
-               [--comment COMMENT] [--configfile CONFIGFILE] [--groups GROUPS] [--hn HN]
+usage: sshc [-h] [--version] [--destination DESTINATION] [--identityfile IDENTITYFILE] [--configfile CONFIGFILE] [--dbfile DBFILE] [--inventoryfile INVENTORYFILE]
+            {init,insert,delete,read,generate} ...
 
 SSH Config and Ansible Inventory Generator !
 
-optional arguments:
+options:
   -h, --help            show this help message and exit
-  --init {yes,no}       Initialize DB?
-  --insert {yes,no}     Insert data?
-  --read {yes,no}       Read Inventory?
-  --generate {yes,no}   Generate SSH Config from Database?
-  --name NAME           Server Name?
-  --host HOST           SSH Host?
-  --user USER           SSH User?
-  --port PORT           SSH Port?
-  --idf IDF             SSH Identity File?
-  --comment COMMENT     SSH Identity File?
+  --version             show program's version number and exit
+  --destination DESTINATION
+                        Config HOME?
+  --identityfile IDENTITYFILE
+                        SSH Default Identity File Location. i.e. id_rsa
   --configfile CONFIGFILE
-                        SSH Config File?
-  --groups GROUPS       Which group to include?
-  --hn HN               Which Host by giving Host Number?
+                        SSH Config File.
+  --dbfile DBFILE       SSHC DB File.
+  --inventoryfile INVENTORYFILE
+                        Ansible Inventory File.
+
+subcommands:
+  The main command of this CLI tool.
+
+  {init,insert,delete,read,generate}
+                        The main commands have their own arguments.
+    init                Initiate Host DB !
+    insert              Insert host information !
+    delete              Delete host information !
+    read                Read Database !
+    generate            Generate necessary config files !
 ```
 
 ### Need the DB to be initiated for the first time
 
 ```bash
-% python3 sshc.py --init yes
+% sshc init
 ```
 
 ### How to insert host information to the Database?
 
 ```bash
-% python3 sshc.py --insert yes --name Google --host 8.8.8.8 --port 22 --user groot --idf /home/fahad/fahad.pem --comment "This is the server where you are not authorized to have access." --configfile /home/fahad/.ssh/config --groups google, fun
+% sshc insert --name Google --host 8.8.8.8 --port 22 --user groot --identityfile /home/fahad/fahad.pem --comment "This is the server where you are not authorized to have access." --configfile /home/fahad/.ssh/config --groups google, fun
 ```
 
 ### How to generate ssh config and as well as ansible inventory file
 
 ```bash
-% python3 sshc.py --generate yes
+% python3 sshc.py generate
 ```

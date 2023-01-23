@@ -1,0 +1,34 @@
+[tool.poetry]
+name = "sshc"
+version = "0.2.0"
+description = "SSH Config and Ansible Inventory Generator."
+authors = ["fahadahammed <iamfahadahammed@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+homepage = "https://sshc.fahadahammed.com/"
+repository = "https://github.com/fahadahammed/sshc"
+documentation = "https://sshc.fahadahammed.com/docs/"
+keywords = ["packaging", "poetry"]
+classifiers = [
+    "Environment :: Console",
+    "Development Status :: 5 - Production/Stable",
+    "License :: OSI Approved :: MIT License",
+    "Topic :: System :: Systems Administration",
+    "Programming Language :: Python"
+]
+packages = [
+    { include = "src/*" },
+]
+
+[tool.poetry.dependencies]
+python = "^3.7"
+
+[tool.poetry.group.dev.dependencies]
+poetry = "^1.3.2"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+sshc = 'src.sshc:__main__'
