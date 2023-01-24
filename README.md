@@ -94,5 +94,5 @@ subcommands:
 ### Read DB Data
 
 ```bash
-sshc read
+% sshc read
 ```
