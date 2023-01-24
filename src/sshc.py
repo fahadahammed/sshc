@@ -83,7 +83,7 @@ class mjdb:
     def read_all_data(self):
         if not os.path.exists(self.db_file_name):
             print(f"{self.db_file_name} file doesn't exists. Please initiate DB first.")
-            exit()
+            exit("DB file doesn't exists. Please initiate first.")
         try:
             with open(self.db_file_name, 'r') as opened_db:
                 to_return = json.load(opened_db)

@@ -1,11 +1,11 @@
-name: Upload Python Package
+name: Build and Publish Python Package to PYPI
 
 on:
   release:
     types: [published]
 
 jobs:
-  deploy:
+  Build_Publish:
 
     runs-on: ubuntu-latest
 
