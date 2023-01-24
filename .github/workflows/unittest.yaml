@@ -34,4 +34,4 @@ jobs:
 
     - name: Test Via Unittest Module
       run: |
-        python3 -m unittest tests/basic-function-test.py || true
+        python3 -m unittest tests/basic-function-test.py
