@@ -1,15 +1,30 @@
-# ssh-config-ansible-inventory-generator
-This tool should help you manage ssh config file with hosts as well as ansible hosts or inventory file.
+# sshc - SSH Configuration Management Tool with Ansible Inventory Generation
+The purpose of this tool is to help you manage ssh config files with hosts as well as ansible inventory file management.
 
-## Structure
+#### Structure
 
 1. Insert host information to a JSON file as a DB.
 2. Generate SSH Config file and an Ansible Inventory file.
 
-## Install
+#### Technology Stack
+1. python
+2. json
+3. openssh
+4. ansible
+
+### Dependency
+
+#### Runtime
+- Python3.7+
+- Linux
+
+#### Development
+- Poetry
+
+## Installation
 
 ```bash
-% pip3 install sshc
+% pip3 install sshc --upgrade
 ```
 
 ## Usage
@@ -96,3 +111,27 @@ subcommands:
 ```bash
 % sshc read
 ```
+
+You can pass verbose too
+
+```bash
+% sshc read --verbose yes
+```
+
+## Known issues or Limitations
+
+- Tested in Ubuntu 22.04
+- Windows is not tested
+
+## Getting help
+If you have questions, concerns, bug reports and others, please file an issue in this repository's Issue Tracker.
+
+## Getting involved
+If you want to contribute to this tool, feel free to fork the repo and create Pull request with your changes.
+Keep in mind to
+- include better comment to understand.
+- create PR to **development** branch.
+
+---
+## Author
+- [Fahad Ahammed - DevOps Enthusiast - Dhaka, Bangladesh](https://github.com/fahadahammed)
