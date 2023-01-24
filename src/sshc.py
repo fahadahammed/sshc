@@ -152,6 +152,11 @@ def __main__():
     read = subparser.add_parser("read", help="Read Database !")
     generate = subparser.add_parser("generate", help="Generate necessary config files !")
 
+    init.add_argument('--destination', help='Config HOME?',
+                        default=f"{os.getenv('HOME')}/.ssh")
+    init.add_argument('--dbfile', help='SSHC DB File.',
+                        default=f"{os.getenv('HOME')}/.ssh/sshc_db.json")
+
     insert.add_argument('--name', help='Server Name?', required=True)
     insert.add_argument('--host', help='SSH Host?', required=True)
     insert.add_argument('--user', help='SSH User?', default="root")
@@ -165,79 +170,62 @@ def __main__():
     insert.add_argument('--groups', nargs='+', help='Which group to include?', default=[])
     insert.add_argument('--identityfile', help='SSH Default Identity File Location. i.e. id_rsa',
                         default=f"{os.getenv('HOME')}/.ssh/id_rsa")
-
-    delete.add_argument('--hostname', help="Server Host Name?", required=True)
-
-    read.add_argument('--hostname', help="Server Host Name?", required=False)
-
-    read.add_argument('--verbose', help="Verbosity?",
-                      choices=["yes", "no"], required=False)
-
-    generate.add_argument('--configfile', help='SSH Config File.',
-                        default=f"{os.getenv('HOME')}/.ssh/sshc_ssh_config")
-    generate.add_argument('--inventoryfile', help='Ansible Inventory File.',
-                        default=f"{os.getenv('HOME')}/.ssh/sshc_ansible_inventory.json")
-
-    init.add_argument('--destination', help='Config HOME?',
-                        default=f"{os.getenv('HOME')}/.ssh")
-    init.add_argument('--dbfile', help='SSHC DB File.',
-                        default=f"{os.getenv('HOME')}/.ssh/sshc_db.json")
-
     insert.add_argument('--destination', help='Config HOME?',
                         default=f"{os.getenv('HOME')}/.ssh")
     insert.add_argument('--dbfile', help='SSHC DB File.',
                         default=f"{os.getenv('HOME')}/.ssh/sshc_db.json")
 
-    generate.add_argument('--destination', help='Config HOME?',
-                        default=f"{os.getenv('HOME')}/.ssh")
-    generate.add_argument('--dbfile', help='SSHC DB File.',
-                        default=f"{os.getenv('HOME')}/.ssh/sshc_db.json")
+    delete.add_argument('--hostname', help="Server Host Name?", required=True)
 
+    read.add_argument('--hostname', help="Server Host Name?", required=False)
+    read.add_argument('--verbose', help="Verbosity?",
+                      choices=["yes", "no"], required=False)
     read.add_argument('--destination', help='Config HOME?',
                         default=f"{os.getenv('HOME')}/.ssh")
     read.add_argument('--dbfile', help='SSHC DB File.',
                         default=f"{os.getenv('HOME')}/.ssh/sshc_db.json")
 
+    generate.add_argument('--configfile', help='SSH Config File.',
+                        default=f"{os.getenv('HOME')}/.ssh/sshc_ssh_config")
+    generate.add_argument('--inventoryfile', help='Ansible Inventory File.',
+                        default=f"{os.getenv('HOME')}/.ssh/sshc_ansible_inventory.json")
+    generate.add_argument('--destination', help='Config HOME?',
+                        default=f"{os.getenv('HOME')}/.ssh")
+    generate.add_argument('--dbfile', help='SSHC DB File.',
+                        default=f"{os.getenv('HOME')}/.ssh/sshc_db.json")
+
+
     # Parse the args
     args = parser.parse_args()
-
-    # Home of the config
-    destination = args.destination
-    if not os.path.exists(destination):
-        print(f"{destination} directory is not ready.")
-        os.makedirs(destination)
-        print(f"{destination} directory is created.")
-
-    identityfile = args.identityfile
-    configfile = args.configfile
-    if not os.path.exists(configfile):
-        print(f"{configfile} file doesn't exists, creating.")
-        with open(configfile, 'w', encoding='utf-8') as file:
-            file.write("")
-        print(f"{configfile} file created.")
-
-    dbfile = args.dbfile
-
-    inventoryfile = args.inventoryfile
-    if not os.path.exists(inventoryfile):
-        print(f"{inventoryfile} file doesn't exists, creating.")
-        with open(inventoryfile, 'w', encoding='utf-8') as file:
-            file.write("{}")
-        print(f"{inventoryfile} file created.")
 
     # Catch Main Command
     command = args.command
     # Process Main Command
     if command == "init":
         print("Initiating DB.")
+        # Home of the config
+        destination = args.destination
+        if not os.path.exists(destination):
+            print(f"{destination} directory is not ready.")
+            os.makedirs(destination)
+            print(f"{destination} directory is created.")
+        dbfile = args.dbfile
         mjdb(db_file_name=dbfile).create_db()
         print("Done.")
     elif command == "insert":
         print("Inserting DATA to DB.")
+        # Home of the config
+        destination = args.destination
+        if not os.path.exists(destination):
+            print(f"{destination} directory is not ready.")
+            os.makedirs(destination)
+            print(f"{destination} directory is created.")
+        dbfile = args.dbfile
         name = str(args.name).lower()
         host = args.host
         port = int(args.port)
         user = args.user
+        identityfile = args.identityfile
         loglevel = args.loglevel
         compression = args.compression
         comment = args.comment
@@ -255,6 +243,13 @@ def __main__():
         mjdb(db_file_name=dbfile).insert_data(data=data)
         print("Done.")
     elif command == "delete":
+        # Home of the config
+        destination = args.destination
+        if not os.path.exists(destination):
+            print(f"{destination} directory is not ready.")
+            os.makedirs(destination)
+            print(f"{destination} directory is created.")
+        dbfile = args.dbfile
         hostname = str(args.hostname).lower()
         print(f"Trying to delete host {hostname} from DB.")
         mjdb(db_file_name=dbfile).delete_data(hostname=hostname)
@@ -262,6 +257,26 @@ def __main__():
     elif command == "generate":
         print("Generating config files from DB.")
         print("Generating SSH Config File...")
+        # Home of the config
+        destination = args.destination
+        if not os.path.exists(destination):
+            print(f"{destination} directory is not ready.")
+            os.makedirs(destination)
+            print(f"{destination} directory is created.")
+        dbfile = args.dbfile
+        configfile = args.configfile
+        if not os.path.exists(configfile):
+            print(f"{configfile} file doesn't exists, creating.")
+            with open(configfile, 'w', encoding='utf-8') as file:
+                file.write("")
+            print(f"{configfile} file created.")
+
+        inventoryfile = args.inventoryfile
+        if not os.path.exists(inventoryfile):
+            print(f"{inventoryfile} file doesn't exists, creating.")
+            with open(inventoryfile, 'w', encoding='utf-8') as file:
+                file.write("{}")
+            print(f"{inventoryfile} file created.")
         the_data = mjdb(db_file_name=dbfile).read_all_data()
         if the_data:
             all_hosts = {}
@@ -309,6 +324,13 @@ def __main__():
             sys.exit("No data in DB.")
     elif command == "read":
         print("Trying to read DB.")
+        # Home of the config
+        destination = args.destination
+        if not os.path.exists(destination):
+            print(f"{destination} directory is not ready.")
+            os.makedirs(destination)
+            print(f"{destination} directory is created.")
+        dbfile = args.dbfile
         if not args.hostname:
             to_return = mjdb(db_file_name=dbfile).read_all_data()
         else:

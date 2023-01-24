@@ -1,17 +1,93 @@
 # sshc - SSH Configuration Management Tool with Ansible Inventory Generation
 This tool can help you manage ssh config files with hosts as well as ansible inventory file.
 
+## What it does?
+
+1. It creates a host database.
+2. Create SSH config from that host database.
+3. Create Ansible inventory from that same host database.
+
+### Example of generated SSH config
+```ini
+# Generated At: 2023-01-24 11:35:25.885044
+
+# -- <
+Host server1
+HostName 192.168.0.100
+Port 22
+User ubuntu
+IdentityFile /home/fahad/.ssh/id_rsa
+LogLevel INFO
+Compression yes
+# Comment: Personal Server: ONE
+# -- >
+
+# -- <
+Host server2
+HostName 10.10.0.102
+Port 4522
+User root
+IdentityFile /home/fahad/.ssh/id_rsa
+LogLevel DEBUG
+Compression no
+# Comment: Personal Server: TWO
+# -- >
+```
+### Example of generated Ansible Inventory
+```json
+{
+    "all": {
+        "hosts": {
+            "server1": {
+                "ansible_host": "192.168.0.100",
+                "ansible_port": 22,
+                "ansible_user": "ubuntu",
+                "ansible_ssh_private_key_file": "/home/fahad/.ssh/id_rsa"
+            },
+            "server2": {
+                "ansible_host": "10.10.0.102",
+                "ansible_port": 4522,
+                "ansible_user": "root",
+                "ansible_ssh_private_key_file": "/home/fahad/.ssh/id_rsa"
+            }
+        },
+        "children": {
+            "personal": {
+                "hosts": {
+                    "server1": null,
+                    "server2": null
+                }
+            },
+            "home": {
+                "hosts": {
+                    "server1": null
+                }
+            },
+            "storage": {
+                "hosts": {
+                    "server2": null
+                }
+            }
+        }
+    },
+    "others": {
+        "generated_at": "2023-01-24 11:35:25.885044"
+    }
+}
+```
+
 ## Why?
 ### Problem it tried to solve
 - Working with a bunch of servers gets messy to track those down.
 - Managing Ansible Inventory and also SSH config file separate is redundant.
 
-### Gave solution through
-- Uses a JSON file as a common database of hosts.
-- Set name, set ports, user, private key when inserting a host information.
-- Set groups, do comment on specific host for future understanding.
+### Tried to solve via
+- Using a JSON file as a common database of hosts.
+- Setting name, ports, user, private key, ssh compression, ssh connection log level etc when inserting a host information.
+- Set groups, do comment on specific host for host management.
 - Well sorted config files.
 - Ansible inventory is managed using JSON file.
+- Add host to multiple groups which end up with ansible hosts group.
 - Remove ~~and update~~ host entry easily.
 
 ## Description
