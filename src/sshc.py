@@ -231,7 +231,7 @@ def __main__():
         comment = args.comment
         groups = args.groups
 
-        if not name or not host or not port or not user or not groups:
+        if not name or not host or not port or not user:
             sys.exit("Some required parameters missing.")
 
         data = {
