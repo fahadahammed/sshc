@@ -112,7 +112,8 @@ def cleanup_file(configfile):
 def insert_timestamp_into_configfile(configfile):
     dt_now = str(datetime.datetime.utcnow())
     with open(configfile, "a", encoding='utf-8') as openconfig:
-        openconfig.write("# Generated at: " + dt_now)
+        openconfig.write("# Generated at: " + dt_now + "\n")
+        openconfig.write("# sshc Version: " + "sshc, " + "v" + read_pyproject_toml() + "\n")
         openconfig.write("\n")
 
 
@@ -337,7 +338,8 @@ def __main__():
                     "children": children
                 },
                 "others": {
-                    "generated_at": str(datetime.datetime.utcnow())
+                    "generated_at": str(datetime.datetime.utcnow()),
+                    "sshc_version": "sshc, " + "v" + read_pyproject_toml()
                 }
             }
             generate_ansible_inventory_file(data_to_write=ansible_inventory_data,
