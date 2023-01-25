@@ -32,6 +32,9 @@ jobs:
     - name: Check via Poetry
       run: poetry check
 
+    - name: Install
+      run: poetry install
+
     - name: Test Via Unittest Module
       run: |
         python3 -m unittest tests/basic-function-test.py
