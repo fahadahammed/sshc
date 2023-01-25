@@ -5,9 +5,10 @@ on:
     branches:
       - main
       - development
+      - GITHUB_ACTIONS
 
 jobs:
-  Lint_and_Test:
+  Lint_Unittest:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -23,18 +24,45 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        python -m pip install pylint poetry pyyaml
+        python -m pip install pylint pyyaml
 
     - name: Analysing the code with pylint
       run: |
         pylint --exit-zero $(find src/ -name "*.py" | xargs)
 
-    - name: Check via Poetry
-      run: poetry check
+    - name: Test Via Unittest Module
+      run: |
+        python3 -m unittest tests/basic-function-test.py
+
+  Command_Test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [ "3.9" ]
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install pyyaml poetry
 
     - name: Install
       run: poetry install
 
-    - name: Test Via Unittest Module
+    - name: Check Version
       run: |
-        python3 -m unittest tests/basic-function-test.py
+        poetry run sshc --version
+
+    - name: Check Help
+      run: |
+        poetry run sshc --help
+        
+    - name: Initiate Database
+      run: |
+        poetry run sshc init
