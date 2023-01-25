@@ -109,13 +109,6 @@ def cleanup_file(configfile):
             openconfig.write("")
 
 
-def insert_timestamp_into_configfile(configfile):
-    dt_now = str(datetime.datetime.utcnow())
-    with open(configfile, "a", encoding='utf-8') as openconfig:
-        openconfig.write("# Generated at: " + dt_now)
-        openconfig.write("\n")
-
-
 def generate_host_entry_string(name, host, port, user, log_level,
                                compression, identityfile, configfile, comment):
     entry_template = f'''# -- <
@@ -201,7 +194,6 @@ def __main__():
     generate.add_argument('--filetype', help='Preferred file type for Ansible inventory. '
                                              'Default is json and you can choose yaml too.',
                           choices=["json", "yaml", "yml"], default="json")
-
 
     # Parse the args
     args = parser.parse_args()
@@ -306,7 +298,8 @@ def __main__():
             groups = []
             cleanup_file(configfile=configfile)
             with open(file=configfile, mode="a+", encoding='utf-8') as thefile:
-                thefile.write(f"# Generated At: {datetime.datetime.utcnow()}\n\n")
+                thefile.write(f"# Generated At: {datetime.datetime.utcnow()}\n")
+                thefile.write("# sshc Version: " + str(read_pyproject_toml()) + "\n\n")
             for i in the_data:
                 groups += i.get("groups", [])
                 all_hosts[i.get("name")] = {
@@ -337,7 +330,8 @@ def __main__():
                     "children": children
                 },
                 "others": {
-                    "generated_at": str(datetime.datetime.utcnow())
+                    "generated_at": str(datetime.datetime.utcnow()),
+                    "sshc_version": str(read_pyproject_toml())
                 }
             }
             generate_ansible_inventory_file(data_to_write=ansible_inventory_data,

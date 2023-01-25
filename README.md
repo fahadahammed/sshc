@@ -99,8 +99,9 @@ Compression no
 ### Technology Stack
 1. python
 2. json
-3. openssh
-4. ansible
+3. yaml
+4. openssh
+5. ansible
 
 ### Dependency
 
@@ -171,7 +172,7 @@ options:
 ### Step 3: Generate ssh config and as well as ansible inventory file
 #### Pattern
 ```shell
-usage: sshc generate [-h] [--configfile CONFIGFILE] [--inventoryfile INVENTORYFILE] [--destination DESTINATION] [--dbfile DBFILE]
+usage: sshc generate [-h] [--configfile CONFIGFILE] [--inventoryfile INVENTORYFILE] [--destination DESTINATION] [--dbfile DBFILE] [--filetype {json,yaml,yml}]
 
 options:
   -h, --help            show this help message and exit
@@ -182,7 +183,10 @@ options:
   --destination DESTINATION
                         Config HOME?
   --dbfile DBFILE       SSHC DB File.
+  --filetype {json,yaml,yml}
+                        Preferred file type for Ansible inventory. Default is json and you can choose yaml too.
 ```
+
 #### Example
 
 ```shell
