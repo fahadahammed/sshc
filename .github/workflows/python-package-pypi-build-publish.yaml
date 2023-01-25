@@ -5,9 +5,70 @@ on:
     types: [published]
 
 jobs:
+  Lint_Unittest:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.9"]
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install pylint pyyaml
+
+    - name: Analysing the code with pylint
+      run: |
+        pylint --exit-zero $(find src/ -name "*.py" | xargs)
+
+    - name: Test Via Unittest Module
+      run: |
+        python3 -m unittest tests/basic-function-test.py
+
+  Command_Test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [ "3.9" ]
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install pyyaml poetry
+
+    - name: Install
+      run: poetry install
+
+    - name: Check Version
+      run: |
+        poetry run sshc --version
+
+    - name: Check Help
+      run: |
+        poetry run sshc --help
+
+    - name: Initiate Database
+      run: |
+        poetry run sshc init
+  
+
   Build_Publish:
 
     runs-on: ubuntu-latest
+    needs: [Lint_Unittest, Command_Test]
 
     steps:
     - uses: actions/checkout@v2
@@ -27,6 +88,9 @@ jobs:
         echo "Hi: ${{ github.ref }}"
         sed -i "s|.*version.*|version = \"`echo ${{ github.ref }} | sed 's|/|\t|g' | awk '{print $NF}'`\"|g" pyproject.toml 
         cp pyproject.toml src/pyproject.toml
+
+    - name: Check Pyproject
+      run: |
         cat pyproject.toml
 
     - name: Check Package
