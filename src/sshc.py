@@ -5,6 +5,7 @@ import datetime
 import sys
 import uuid
 import pprint
+import yaml
 
 
 def get_random_id():
@@ -133,9 +134,13 @@ Compression {compression}
         thefile.write(entry_template)
 
 
-def generate_ansible_inventory_file(data_to_write, inventory_file_name):
-    with open(file=inventory_file_name, mode="w", encoding='utf-8') as thefile:
-        json.dump(data_to_write, thefile)
+def generate_ansible_inventory_file(data_to_write, inventory_file_name, file_type="json"):
+    if file_type == "json":
+        with open(file=inventory_file_name, mode="w", encoding='utf-8') as thefile:
+            json.dump(data_to_write, thefile)
+    if file_type in ["yaml", "yml"]:
+        with open(file=inventory_file_name, mode="w", encoding='utf-8') as thefile:
+            yaml.dump(data=data_to_write, stream=thefile)
 
 
 def __main__():
@@ -193,6 +198,9 @@ def __main__():
                         default=f"{os.getenv('HOME')}/.ssh")
     generate.add_argument('--dbfile', help='SSHC DB File.',
                         default=f"{os.getenv('HOME')}/.ssh/sshc_db.json")
+    generate.add_argument('--filetype', help='Preferred file type for Ansible inventory. '
+                                             'Default is json and you can choose yaml too.',
+                          choices=["json", "yaml", "yml"], default="json")
 
 
     # Parse the args
@@ -257,6 +265,7 @@ def __main__():
     elif command == "generate":
         print("Generating config files from DB.")
         print("Generating SSH Config File...")
+        filetype = args.filetype
         # Home of the config
         destination = args.destination
         if not os.path.exists(destination):
@@ -272,11 +281,25 @@ def __main__():
             print(f"{configfile} file created.")
 
         inventoryfile = args.inventoryfile
-        if not os.path.exists(inventoryfile):
-            print(f"{inventoryfile} file doesn't exists, creating.")
-            with open(inventoryfile, 'w', encoding='utf-8') as file:
-                file.write("{}")
-            print(f"{inventoryfile} file created.")
+        if filetype == "json":
+            if inventoryfile.endswith("json"):
+                if not os.path.exists(inventoryfile):
+                    print(f"{inventoryfile} file doesn't exists, creating.")
+                    with open(inventoryfile, 'w', encoding='utf-8') as file:
+                        file.write("{}")
+                    print(f"{inventoryfile} file created.")
+            else:
+                print(f"Please pass {filetype} inventory file.")
+        if filetype in ["yaml", "yml"]:
+            if inventoryfile.endswith("yaml") or inventoryfile.endswith("yml"):
+                if not os.path.exists(inventoryfile):
+                    print(f"{inventoryfile} file doesn't exists, creating.")
+                    with open(inventoryfile, 'w', encoding='utf-8') as file:
+                        file.write("{}")
+                    print(f"{inventoryfile} file created.")
+            else:
+                print(f"Please pass {filetype} inventory file.")
+
         the_data = mjdb(db_file_name=dbfile).read_all_data()
         if the_data:
             all_hosts = {}
@@ -318,8 +341,16 @@ def __main__():
                 }
             }
             generate_ansible_inventory_file(data_to_write=ansible_inventory_data,
-                                            inventory_file_name=inventoryfile)
+                                            inventory_file_name=inventoryfile, file_type=filetype)
             print("Done.")
+            print("." * 50)
+            print(f"SSH Config File: {configfile}")
+            print(f"Ansible Inventory: {inventoryfile}")
+            print("." * 50)
+            print("# How?")
+            print(f"ssh -F {configfile}")
+            print(f"ansible -i {inventoryfile}")
+            print("." * 50)
         else:
             sys.exit("No data in DB.")
     elif command == "read":
