@@ -31,6 +31,7 @@ class mjdb:
         self.db_file_name = db_file_name
 
     def create_db(self):
+        """This function try to create Database in place. If the destination is not found, returns False."""
         try:
             if not os.path.exists(self.db_file_name):
                 with open(self.db_file_name, 'a', encoding='utf-8') as opened_db:
@@ -41,6 +42,7 @@ class mjdb:
             return False
 
     def insert_data(self, data):
+        """Take json data and insert it into the DB"""
         if not os.path.exists(self.db_file_name):
             print(f"{self.db_file_name} file doesn't exists. Please initiate DB first.")
             sys.exit()
@@ -69,19 +71,17 @@ class mjdb:
 
     def delete_data(self, hostname):
         all_data = self.read_all_data()
+        to_insert = []
         if all_data:
-            to_insert = []
             for data in all_data:
                 if data.get("name") != hostname:
                     to_insert.append(data)
             with open(self.db_file_name, 'w', encoding='utf-8') as opened_db:
                 json.dump(to_insert, opened_db)
             return to_insert
-        else:
-            to_insert = []
-            with open(self.db_file_name, 'w', encoding='utf-8') as opened_db:
-                json.dump(to_insert, opened_db)
-            return to_insert
+        with open(self.db_file_name, 'w', encoding='utf-8') as opened_db:
+            json.dump(to_insert, opened_db)
+        return to_insert
 
     def read_all_data(self):
         if not os.path.exists(self.db_file_name):
@@ -98,7 +98,6 @@ class mjdb:
 
 def cleanup_file(configfile):
     configfiledir = configfile.replace("/" + configfile.split("/")[-1], "")
-
     try:
         os.remove(configfile)
     except Exception as ex:
@@ -365,6 +364,24 @@ def __main__():
         if args.verbose == "yes":
             p_p.pprint(to_return)
         else:
-            p_p.pprint([f'{x.get("name")} {x.get("host")}' for x in to_return])
+            # p_p.pprint([f'{x.get("name")} {x.get("host")}' for x in to_return])
+            to_return_1 = []
+            liner = []
+            for _ in to_return:
+                frmt1 = f'{_.get("name")}\t{_.get("host")}'
+                frmt2 = f'$ ssh {_.get("name")}'
+                # print(frmt1)
+                # print(frmt2)
+                frmt = f"{frmt1}\n{frmt2}"
+                to_return_1.append(frmt)
+                frmt1ln = len(frmt1)
+                frmt2ln = len(frmt2)
+                frmtln = frmt1ln if frmt1ln >= frmt2ln else frmt2ln
+                liner.append(int((frmtln+((3/frmtln)*100))))
+            final_liner = max(liner)
+            print("." * final_liner)
+            for i in to_return_1:
+                print(i)
+                print("."*final_liner)
     else:
         print("There is nothing to execute.")
