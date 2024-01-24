@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "sshc"
-version = "0.3.0"
+version = "2.0.0"
 description = "SSH Config and Ansible Inventory Generator."
 authors = ["fahadahammed <iamfahadahammed@gmail.com>"]
 license = "MIT"

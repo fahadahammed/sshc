@@ -31,6 +31,7 @@ class mjdb:
         self.db_file_name = db_file_name
 
     def create_db(self):
+        """This function try to create Database in place. If the destination is not found, returns False."""
         try:
             if not os.path.exists(self.db_file_name):
                 with open(self.db_file_name, 'a', encoding='utf-8') as opened_db:
@@ -41,6 +42,7 @@ class mjdb:
             return False
 
     def insert_data(self, data):
+        """Take json data and insert it into the DB"""
         if not os.path.exists(self.db_file_name):
             print(f"{self.db_file_name} file doesn't exists. Please initiate DB first.")
             sys.exit()
@@ -50,6 +52,30 @@ class mjdb:
             to_insert = existing_data + [data]
             all_data = self.read_all_data()
             data_exists = [x for x in all_data if x.get("name") == data.get("name")]
+            if not data_exists:
+                with open(self.db_file_name, 'w', encoding='utf-8') as opened_db:
+                    json.dump(to_insert, opened_db)
+            return True
+        except Exception as ex:
+            print(ex)
+            return False
+
+    def update_data(self, data):
+        """Take json data and insert it into the DB"""
+        if not os.path.exists(self.db_file_name):
+            print(f"{self.db_file_name} file doesn't exists. Please initiate DB first.")
+            sys.exit()
+        the_data = self.read_data(hostname=data.get("name"))
+        updated_data = the_data.copy()
+        for k, v in data.items():
+            updated_data[k] = v
+
+        self.delete_data(hostname=updated_data.get("name"))
+        try:
+            existing_data = self.read_all_data()
+            to_insert = existing_data + [updated_data]
+            all_data = self.read_all_data()
+            data_exists = [x for x in all_data if x.get("name") == updated_data.get("name")]
             if not data_exists:
                 with open(self.db_file_name, 'w', encoding='utf-8') as opened_db:
                     json.dump(to_insert, opened_db)
@@ -69,19 +95,17 @@ class mjdb:
 
     def delete_data(self, hostname):
         all_data = self.read_all_data()
+        to_insert = []
         if all_data:
-            to_insert = []
             for data in all_data:
                 if data.get("name") != hostname:
                     to_insert.append(data)
             with open(self.db_file_name, 'w', encoding='utf-8') as opened_db:
                 json.dump(to_insert, opened_db)
             return to_insert
-        else:
-            to_insert = []
-            with open(self.db_file_name, 'w', encoding='utf-8') as opened_db:
-                json.dump(to_insert, opened_db)
-            return to_insert
+        with open(self.db_file_name, 'w', encoding='utf-8') as opened_db:
+            json.dump(to_insert, opened_db)
+        return to_insert
 
     def read_all_data(self):
         if not os.path.exists(self.db_file_name):
@@ -98,7 +122,6 @@ class mjdb:
 
 def cleanup_file(configfile):
     configfiledir = configfile.replace("/" + configfile.split("/")[-1], "")
-
     try:
         os.remove(configfile)
     except Exception as ex:
@@ -147,6 +170,7 @@ def __main__():
     init = subparser.add_parser("init", help="Initiate Host DB !")
     insert = subparser.add_parser("insert", help="Insert host information !")
     delete = subparser.add_parser("delete", help="Delete host information !")
+    update = subparser.add_parser("update", help="Update host information !")
     read = subparser.add_parser("read", help="Read Database !")
     generate = subparser.add_parser("generate", help="Generate necessary config files !")
 
@@ -174,6 +198,25 @@ def __main__():
                         default=f"{os.getenv('HOME')}/.ssh/sshc_db.json")
 
     delete.add_argument('--hostname', help="Server Host Name?", required=True)
+
+    update.add_argument('--name', help='Server Name?', required=True)
+    update.add_argument('--host', help='SSH Host?', required=None)
+    update.add_argument('--user', help='SSH User?', default=None)
+    update.add_argument('--port', help='SSH Port?', default=None)
+    update.add_argument('--comment', help='SSH Identity File.', default=None)
+    update.add_argument('--loglevel', help='SSH Log Level.',
+                        choices=["INFO", "DEBUG", "ERROR", "WARNING"],
+                        default=None)
+    update.add_argument('--compression', help='SSH Connection Compression.',
+                        choices=["yes", "no"], default=None)
+    update.add_argument('--groups', nargs='+', help='Which group to include?', default=[])
+    update.add_argument('--identityfile', help='SSH Default Identity File Location. i.e. id_rsa',
+                        default=f"{os.getenv('HOME')}/.ssh/id_rsa")
+    update.add_argument('--destination', help='Config HOME?',
+                        default=f"{os.getenv('HOME')}/.ssh")
+    update.add_argument('--dbfile', help='SSHC DB File.',
+                        default=f"{os.getenv('HOME')}/.ssh/sshc_db.json")
+
 
     read.add_argument('--hostname', help="Server Host Name?", required=False)
     read.add_argument('--verbose', help="Verbosity?",
@@ -253,6 +296,46 @@ def __main__():
         hostname = str(args.hostname).lower()
         print(f"Trying to delete host {hostname} from DB.")
         mjdb(db_file_name=dbfile).delete_data(hostname=hostname)
+        print("Done.")
+    elif command == "update":
+        # Home of the config
+        destination = args.destination
+        if not os.path.exists(destination):
+            print(f"{destination} directory is not ready.")
+            os.makedirs(destination)
+            print(f"{destination} directory is created.")
+        dbfile = args.dbfile
+        name = str(args.name).lower() if args.name else args.name
+        host = args.host
+        port = int(args.port) if args.port else args.port
+        user = args.user
+        identityfile = args.identityfile
+        loglevel = args.loglevel
+        compression = args.compression
+        comment = args.comment
+        groups = args.groups
+
+        if not name:
+            sys.exit("Some required parameters missing.")
+
+        adata = {
+            "name": name, "host": host, "port": port, "user": user,
+            "log_level": loglevel, "compression": compression, "identityfile": identityfile,
+            "comment": comment, "groups": groups
+        }
+
+        data = {item: value for (item, value) in adata.items() if value}
+
+        all_data = mjdb(db_file_name=dbfile).read_all_data()
+        if data and all_data:
+            if data.get("name") in [x.get("name") for x in all_data]:
+                print("Found in DB, so updating data...")
+                mjdb(db_file_name=dbfile).update_data(data=data)
+            else:
+                print("Not found in DB to update, so inserting data...")
+                mjdb(db_file_name=dbfile).insert_data(data=data)
+        else:
+            print("Something is wrong.")
         print("Done.")
     elif command == "generate":
         print("Generating config files from DB.")
@@ -365,6 +448,21 @@ def __main__():
         if args.verbose == "yes":
             p_p.pprint(to_return)
         else:
-            p_p.pprint([f'{x.get("name")} {x.get("host")}' for x in to_return])
+            to_return_1 = []
+            liner = []
+            for _ in to_return:
+                frmt1 = f'{_.get("name")}\t{_.get("host")}'
+                frmt2 = f'$ ssh {_.get("name")}'
+                frmt = f"{frmt1}\n{frmt2}"
+                to_return_1.append(frmt)
+                frmt1ln = len(frmt1)
+                frmt2ln = len(frmt2)
+                frmtln = frmt1ln if frmt1ln >= frmt2ln else frmt2ln
+                liner.append(int((frmtln+((3/frmtln)*100))))
+            final_liner = max(liner)
+            print("." * final_liner)
+            for i in to_return_1:
+                print(i)
+                print("."*final_liner)
     else:
         print("There is nothing to execute.")
