@@ -88,7 +88,7 @@ Compression no
 - Well sorted config files.
 - Ansible inventory is managed using JSON file.
 - Add host to multiple groups which end up with ansible hosts group.
-- Remove ~~and update~~ host entry easily.
+- Remove and update host entry easily.
 
 ## Description
 ### Structure
@@ -230,7 +230,7 @@ Help message of the tool
 ```
 
 ```shell
-usage: sshc [-h] [--version] {init,insert,delete,read,generate} ...
+usage: sshc [-h] [--version] {init,insert,delete,update,read,generate} ...
 
 SSH Config and Ansible Inventory Generator !
 
@@ -241,11 +241,12 @@ options:
 subcommands:
   The main command of this CLI tool.
 
-  {init,insert,delete,read,generate}
+  {init,insert,delete,update,read,generate}
                         The main commands have their own arguments.
     init                Initiate Host DB !
     insert              Insert host information !
     delete              Delete host information !
+    update              Update host information !
     read                Read Database !
     generate            Generate necessary config files !
 ```
@@ -254,6 +255,33 @@ subcommands:
 
 ```shell
 % sshc delete --hostname <HOSTNAME>
+```
+
+### Update Inserted Data
+
+```shell
+usage: sshc update [-h] --name NAME [--host HOST] [--user USER] [--port PORT] [--comment COMMENT]
+                   [--loglevel {INFO,DEBUG,ERROR,WARNING}] [--compression {yes,no}] [--groups GROUPS [GROUPS ...]]
+                   [--identityfile IDENTITYFILE] [--destination DESTINATION] [--dbfile DBFILE]
+
+options:
+  -h, --help            show this help message and exit
+  --name NAME           Server Name?
+  --host HOST           SSH Host?
+  --user USER           SSH User?
+  --port PORT           SSH Port?
+  --comment COMMENT     SSH Identity File.
+  --loglevel {INFO,DEBUG,ERROR,WARNING}
+                        SSH Log Level.
+  --compression {yes,no}
+                        SSH Connection Compression.
+  --groups GROUPS [GROUPS ...]
+                        Which group to include?
+  --identityfile IDENTITYFILE
+                        SSH Default Identity File Location. i.e. id_rsa
+  --destination DESTINATION
+                        Config HOME?
+  --dbfile DBFILE       SSHC DB File.
 ```
 
 ### Read DB Data
