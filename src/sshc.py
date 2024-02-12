@@ -188,7 +188,7 @@ def __main__():
                         choices=["INFO", "DEBUG", "ERROR", "WARNING"],
                         default="INFO")
     insert.add_argument('--compression', help='SSH Connection Compression.',
-                        choices=["yes", "no"], default="yes")
+                        choices=["yes", "no"], default="no")
     insert.add_argument('--groups', nargs='+', help='Which group to include?', default=[])
     insert.add_argument('--identityfile', help='SSH Default Identity File Location. i.e. id_rsa',
                         default=f"{os.getenv('HOME')}/.ssh/id_rsa")
@@ -203,12 +203,12 @@ def __main__():
     update.add_argument('--host', help='SSH Host?', required=None)
     update.add_argument('--user', help='SSH User?', default=None)
     update.add_argument('--port', help='SSH Port?', default=None)
-    update.add_argument('--comment', help='SSH Identity File.', default=None)
+    update.add_argument('--comment', help='SSH Identity File.', default="No Comment.")
     update.add_argument('--loglevel', help='SSH Log Level.',
                         choices=["INFO", "DEBUG", "ERROR", "WARNING"],
-                        default=None)
+                        default="INFO")
     update.add_argument('--compression', help='SSH Connection Compression.',
-                        choices=["yes", "no"], default=None)
+                        choices=["yes", "no"], default="no")
     update.add_argument('--groups', nargs='+', help='Which group to include?', default=[])
     update.add_argument('--identityfile', help='SSH Default Identity File Location. i.e. id_rsa',
                         default=f"{os.getenv('HOME')}/.ssh/id_rsa")
@@ -306,9 +306,9 @@ def __main__():
             print(f"{destination} directory is created.")
         dbfile = args.dbfile
         name = str(args.name).lower() if args.name else args.name
-        host = args.host
-        port = int(args.port) if args.port else args.port
-        user = args.user
+        host = args.host if args.host else None
+        port = int(args.port) if args.port else 22
+        user = args.user if args.user else "ubuntu"
         identityfile = args.identityfile
         loglevel = args.loglevel
         compression = args.compression
@@ -333,6 +333,10 @@ def __main__():
                 mjdb(db_file_name=dbfile).update_data(data=data)
             else:
                 print("Not found in DB to update, so inserting data...")
+                if not name or not host or not port:
+                    sys.exit("Some required parameters missing.")
+                if not data.get("groups"):
+                    data["groups"] = []
                 mjdb(db_file_name=dbfile).insert_data(data=data)
         else:
             print("Something is wrong.")
