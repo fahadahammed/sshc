@@ -4,7 +4,7 @@
 
 **sshc** — SSH Config and Ansible Inventory Generator.
 
-- **Version:** `0.3.0` (see root `pyproject.toml`; PyPI publish may rewrite from the GitHub release tag)
+- **Version:** `3.0.0` (see root `pyproject.toml`; PyPI publish may rewrite from the GitHub release tag)
 - **License:** MIT
 - **Repo:** https://github.com/fahadahammed/sshc
 - **Author:** Fahad Ahammed

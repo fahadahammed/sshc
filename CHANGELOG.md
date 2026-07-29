@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.0.0] - 2026-07-29
+
 ### Added
 
 - Windows-friendly default paths via `pathlib.Path.home()` (typically `%USERPROFILE%\.ssh` on Windows).
@@ -32,13 +34,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `read_all_data` always returns a `list` on error (never a `dict`).
 - Empty-DB `read` / `list` no longer crashes on `max([])`.
 - `cleanup_file` and `read_pyproject_toml` use portable path handling.
-- Version unit test no longer hardcodes `0.3.0`.
+- Version unit test no longer hardcodes a fixed version string.
 
-## [0.3.0] - 2023-01
+## [2.0.1] - 2024-02-12
+
+### Fixed
+
+- Update path when host is missing: insert-check refactor and missing-data handling ([#18](https://github.com/fahadahammed/sshc/issues/18) / PR #19).
+
+## [2.0.0] - 2024-01-24
+
+### Changed
+
+- Major release line following prior 1.x packaging and CLI work.
+
+## [1.0.0] - 2023-01-25
 
 ### Added
 
-- `update` subcommand for modifying host entries.
 - sshc version stamped into generated SSH config and Ansible inventory.
 - GitHub Actions for pylint, unittest, CLI smoke tests, and PyPI publish on release.
 
@@ -46,18 +59,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Improved `read` command output formatting.
 
-### Fixed
-
-- Update path when host is missing: insert-check refactor and missing-data handling ([#18](https://github.com/fahadahammed/sshc/issues/18) / PR #19).
-
-## [0.2.0] - prior
+## [0.9.0] - 2023-01-25
 
 ### Added
 
-- Core CLI: `init`, `insert`, `delete`, `read`, `generate`.
-- JSON host database with SSH config and Ansible inventory generation (JSON/YAML).
-- Poetry packaging and PyPI distribution as `sshc`.
+- YAML file generation for Ansible inventory.
 
-[Unreleased]: https://github.com/fahadahammed/sshc/compare/v0.3.0...HEAD
-[0.3.0]: https://github.com/fahadahammed/sshc/releases/tag/v0.3.0
-[0.2.0]: https://github.com/fahadahammed/sshc/releases/tag/v0.2.0
+## [0.3.0] - prior
+
+### Added
+
+- `update` subcommand for modifying host entries.
+- Core CLI foundations (`init`, `insert`, `delete`, `read`, `generate`) and Poetry/PyPI packaging in earlier 0.x releases.
+
+[Unreleased]: https://github.com/fahadahammed/sshc/compare/v3.0.0...HEAD
+[3.0.0]: https://github.com/fahadahammed/sshc/releases/tag/v3.0.0
+[2.0.1]: https://github.com/fahadahammed/sshc/releases/tag/2.0.1
+[2.0.0]: https://github.com/fahadahammed/sshc/releases/tag/2.0.0
+[1.0.0]: https://github.com/fahadahammed/sshc/releases/tag/1.0.0
+[0.9.0]: https://github.com/fahadahammed/sshc/releases/tag/0.9.0
+[0.3.0]: https://github.com/fahadahammed/sshc/releases/tag/0.3.0

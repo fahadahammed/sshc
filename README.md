@@ -10,7 +10,7 @@ This tool can help you manage ssh config files with hosts as well as ansible inv
 ### Example of generated SSH config
 ```ini
 # Generated At: 2023-01-24 11:35:25.885044
-# sshc Version: 0.3.0
+# sshc Version: 3.0.0
 
 # -- <
 Host server1
@@ -73,7 +73,7 @@ Compression no
     },
     "others": {
         "generated_at": "2023-01-24 11:35:25.885044",
-        "sshc_version": "0.3.0"
+        "sshc_version": "3.0.0"
     }
 }
 ```

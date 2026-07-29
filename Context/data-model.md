@@ -23,9 +23,9 @@ Document format (schema version 1):
   "meta": {
     "schema_version": 1,
     "created_at": "2026-07-29T05:00:00+00:00",
-    "created_with_sshc_version": "0.3.0",
+    "created_with_sshc_version": "3.0.0",
     "updated_at": "2026-07-29T05:10:00+00:00",
-    "updated_with_sshc_version": "0.3.0",
+    "updated_with_sshc_version": "3.0.0",
     "update_count": 3,
     "hosts_sha256": "<sha256 of canonical hosts JSON>"
   },
