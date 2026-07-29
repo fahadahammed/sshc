@@ -3,13 +3,14 @@ This tool can help you manage ssh config files with hosts as well as ansible inv
 
 ## What it does?
 
-1. It creates a host database.
+1. It creates a host database (JSON document with metadata + hosts).
 2. Create SSH config from that host database.
 3. Create Ansible inventory from that same host database.
 
 ### Example of generated SSH config
 ```ini
 # Generated At: 2023-01-24 11:35:25.885044
+# sshc Version: 0.3.0
 
 # -- <
 Host server1
@@ -71,7 +72,8 @@ Compression no
         }
     },
     "others": {
-        "generated_at": "2023-01-24 11:35:25.885044"
+        "generated_at": "2023-01-24 11:35:25.885044",
+        "sshc_version": "0.3.0"
     }
 }
 ```
@@ -82,13 +84,13 @@ Compression no
 - Managing Ansible Inventory and also SSH config file separate is redundant.
 
 ### Tried to solve via
-- Using a JSON file as a common database of hosts.
+- Using a JSON file as a common database of hosts (with creation/update metadata and a SHA-256 integrity checksum).
 - Setting name, ports, user, private key, ssh compression, ssh connection log level etc when inserting a host information.
 - Set groups, do comment on specific host for host management.
 - Well sorted config files.
-- Ansible inventory is managed using JSON file.
+- Ansible inventory is managed using JSON file (YAML/YML also supported).
 - Add host to multiple groups which end up with ansible hosts group.
-- Remove and update host entry easily.
+- Remove and update host entry easily (partial update only changes fields you pass).
 
 ## Description
 ### Structure
@@ -106,8 +108,8 @@ Compression no
 ### Dependency
 
 #### Runtime
-- Python3.7+
-- Linux
+- Python 3.7+
+- Linux or Windows (paths use the user home directory via `pathlib`, typically `~/.ssh` or `%USERPROFILE%\.ssh`)
 
 #### Development
 - Poetry
@@ -118,7 +120,19 @@ Compression no
 % pip3 install sshc --upgrade
 ```
 
+See [CHANGELOG.md](CHANGELOG.md) for release history and unreleased changes.
+
 ## Usage
+
+Default files live under your user home `.ssh` directory (cross-platform):
+
+| Artifact | Default path |
+|----------|----------------|
+| Host DB | `<home>/.ssh/sshc_db.json` |
+| SSH config | `<home>/.ssh/sshc_ssh_config` |
+| Ansible inventory | `<home>/.ssh/sshc_ansible_inventory.json` |
+
+On Linux/macOS that is usually `$HOME/.ssh/...`. On Windows it is typically `%USERPROFILE%\.ssh\...`.
 
 ### Step 1: Need the DB to be initiated for the first time
 #### Pattern
@@ -138,6 +152,10 @@ options:
 % sshc init
 ```
 
+This creates `<home>/.ssh/sshc_db.json` as a document with `meta` (created/updated timestamps and sshc versions, `update_count`, `hosts_sha256`) and an empty `hosts` array.
+
+If the DB file already exists as a legacy JSON array (`[]` or a list of hosts), `init` upgrades it in place to the document format and adds metadata without deleting hosts.
+
 ### Step 2: Insert host information to the Database
 #### Pattern
 ```shell
@@ -148,17 +166,17 @@ options:
   -h, --help            show this help message and exit
   --name NAME           Server Name?
   --host HOST           SSH Host?
-  --user USER           SSH User?
-  --port PORT           SSH Port?
-  --comment COMMENT     SSH Identity File.
+  --user USER           SSH User? (default: root)
+  --port PORT           SSH Port? (default: 22)
+  --comment COMMENT     Host comment.
   --loglevel {INFO,DEBUG,ERROR,WARNING}
                         SSH Log Level.
   --compression {yes,no}
                         SSH Connection Compression.
   --groups GROUPS [GROUPS ...]
-                        Which group to include?
+                        Which groups to include? (space-separated)
   --identityfile IDENTITYFILE
-                        SSH Default Identity File Location. i.e. id_rsa
+                        SSH identity file location (default: <home>/.ssh/id_rsa)
   --destination DESTINATION
                         Config HOME?
   --dbfile DBFILE       SSHC DB File.
@@ -166,8 +184,10 @@ options:
 
 #### Example
 ```shell
-% sshc insert --name Google --host 8.8.8.8 --port 22 --user groot --identityfile /home/fahad/fahad.pem --comment "This is the server where you are not authorized to have access." --configfile /home/fahad/.ssh/config --groups google, fun
+% sshc insert --name Google --host 8.8.8.8 --port 22 --user groot --identityfile /home/fahad/fahad.pem --comment "This is the server where you are not authorized to have access." --groups google fun
 ```
+
+If a host `name` already exists, insert is skipped and a message is printed.
 
 ### Step 3: Generate ssh config and as well as ansible inventory file
 #### Pattern
@@ -190,17 +210,17 @@ options:
 #### Example
 
 ```shell
-% python3 sshc.py generate
+% sshc generate
 ```
 
 This command will read all the entries in the DB and generate
-1. SSH config file in your preferred directory or default one(i.e. $HOME/.ssh/sshc_ssh_config).
-2. Ansible Inventory file will be created at your preferred directory or in default one (i.e. $HOME/.ssh/sshc_ansible_inventory.json).
+1. SSH config file in your preferred directory or the default (`<home>/.ssh/sshc_ssh_config`).
+2. Ansible inventory file in your preferred directory or the default (`<home>/.ssh/sshc_ansible_inventory.json`).
 
-If you stick with default directory you will find the generated files in:
-1. Default Directory: `$HOME/.ssh`
-2. Generated Ansible Inventory: `$HOME/.ssh/sshc_ansible_inventory.json`
-3. Generated SSH Config: `$HOME/.ssh/sshc_ssh_config`
+If you stick with the default directory you will find the generated files in:
+1. Default Directory: `<home>/.ssh`
+2. Generated Ansible Inventory: `<home>/.ssh/sshc_ansible_inventory.json`
+3. Generated SSH Config: `<home>/.ssh/sshc_ssh_config`
 
 You can use these configs like below.
 
@@ -212,6 +232,11 @@ For SSH,
 For Ansible,
 ```shell
 % ansible -i $HOME/.ssh/sshc_ansible_inventory.json all --list-host
+```
+
+On Windows (PowerShell), use the same idea with your profile path, for example:
+```powershell
+ssh -F $env:USERPROFILE\.ssh\sshc_ssh_config
 ```
 
 **Note: If you choose default SSH config file location and ansible host file location, sshc will replace the file. Be careful.**
@@ -230,7 +255,7 @@ Help message of the tool
 ```
 
 ```shell
-usage: sshc [-h] [--version] {init,insert,delete,update,read,generate} ...
+usage: sshc [-h] [--version] {init,insert,delete,update,read,generate,status} ...
 
 SSH Config and Ansible Inventory Generator !
 
@@ -241,14 +266,15 @@ options:
 subcommands:
   The main command of this CLI tool.
 
-  {init,insert,delete,update,read,generate}
+  {init,insert,delete,update,read,generate,status}
                         The main commands have their own arguments.
     init                Initiate Host DB !
     insert              Insert host information !
     delete              Delete host information !
     update              Update host information !
-    read                Read Database !
+    read (list)         Read / list host database !
     generate            Generate necessary config files !
+    status              Check DB integrity and generated file sync !
 ```
 
 ### Delete Inserted Data
@@ -257,7 +283,11 @@ subcommands:
 % sshc delete --hostname <HOSTNAME>
 ```
 
+Optional path overrides: `--destination`, `--dbfile`.
+
 ### Update Inserted Data
+
+Only fields you pass are changed; omitted fields stay as they are in the DB.
 
 ```shell
 usage: sshc update [-h] --name NAME [--host HOST] [--user USER] [--port PORT] [--comment COMMENT]
@@ -270,36 +300,61 @@ options:
   --host HOST           SSH Host?
   --user USER           SSH User?
   --port PORT           SSH Port?
-  --comment COMMENT     SSH Identity File.
+  --comment COMMENT     Host comment (omit to leave unchanged).
   --loglevel {INFO,DEBUG,ERROR,WARNING}
-                        SSH Log Level.
+                        SSH Log Level (omit to leave unchanged).
   --compression {yes,no}
-                        SSH Connection Compression.
+                        SSH Connection Compression (omit to leave unchanged).
   --groups GROUPS [GROUPS ...]
-                        Which group to include?
+                        Which group to include? (omit to leave unchanged)
   --identityfile IDENTITYFILE
-                        SSH Default Identity File Location. i.e. id_rsa
+                        SSH identity file (omit to leave unchanged)
   --destination DESTINATION
                         Config HOME?
   --dbfile DBFILE       SSHC DB File.
 ```
 
-### Read DB Data
+#### Example
+```shell
+% sshc update --name google --port 2222
+```
+
+If the host name is not in the DB, update will insert instead (then `--host` and `--port` are required).
+
+### Read / list DB Data
+
+`list` is a synonym for `read` (same options and output).
 
 ```shell
 % sshc read
+% sshc list
 ```
 
-You can pass verbose too
+You can pass verbose too (prints DB metadata and hosts)
 
 ```shell
 % sshc read --verbose yes
+% sshc list --verbose yes
 ```
+
+### Status / health check
+
+Check DB integrity, emptiness, identity-file paths, and whether SSH config / Ansible inventory match the DB (or need `sshc generate`).
+
+```shell
+% sshc status
+% sshc status --json
+% sshc status --dbfile PATH --configfile PATH --inventoryfile PATH
+```
+
+- Exit code `0` when there are no error-level issues (warnings alone are OK).
+- Exit code `1` when integrity fails, generated files are missing/out of sync while hosts exist, or the DB is unusable.
+- Missing generated files with an **empty** DB are warnings; with hosts present they are errors and set `needs_regeneration`.
 
 ## Known issues or Limitations
 
-- Tested in Ubuntu 22.04
-- Windows is not tested
+- Tested on Ubuntu 22.04 and Windows (path handling uses `pathlib.Path.home()`, typically `%USERPROFILE%\.ssh` on Windows).
+- OpenSSH client / Ansible availability on Windows depends on your local install; sshc itself generates the config and inventory files portably.
 
 ## Getting help
 If you have questions, concerns, bug reports and others, please file an issue in this repository's Issue Tracker.
@@ -309,6 +364,7 @@ If you want to contribute to this tool, feel free to fork the repo and create Pu
 Keep in mind to
 - include better comment to understand.
 - create PR to **development** branch.
+- check the `Context/` directory for maintainer-oriented architecture notes, gotchas, and todo tracking.
 
 ---
 ## Author

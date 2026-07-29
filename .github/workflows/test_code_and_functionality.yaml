@@ -9,9 +9,10 @@ on:
 
 jobs:
   Lint_Unittest:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
+        os: [ubuntu-latest, windows-latest]
         python-version: ["3.9"]
     steps:
     - uses: actions/checkout@v2
@@ -27,17 +28,19 @@ jobs:
         python -m pip install pylint pyyaml
 
     - name: Analysing the code with pylint
+      if: runner.os != 'Windows'
       run: |
         pylint --exit-zero $(find src/ -name "*.py" | xargs)
 
     - name: Test Via Unittest Module
       run: |
-        python3 -m unittest tests/basic-function-test.py
+        python -m unittest tests/basic-function-test.py
 
   Command_Test:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
+        os: [ubuntu-latest, windows-latest]
         python-version: [ "3.9" ]
     steps:
     - uses: actions/checkout@v2
@@ -62,7 +65,7 @@ jobs:
     - name: Check Help
       run: |
         poetry run sshc --help
-        
+
     - name: Initiate Database
       run: |
         poetry run sshc init
