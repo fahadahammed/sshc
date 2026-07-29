@@ -38,5 +38,6 @@ Managing many servers means maintaining both `~/.ssh/config` and Ansible invento
 
 ## User-facing docs
 
-End-user usage, examples, and install instructions live in root `README.md`.
-This `Context/` folder is for maintainers and agents, not a replacement for the README.
+- End-user guide and **contributing**: root [README.md](../README.md)
+- Releases: [CHANGELOG.md](../CHANGELOG.md)
+- This `Context/` folder is for maintainers and agents.

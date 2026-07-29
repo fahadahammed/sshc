@@ -48,6 +48,105 @@ def default_ssh_config_file():
     return str(get_ssh_dir() / "sshc_ssh_config")
 
 
+def default_openssh_config_file():
+    """OpenSSH default config filename: <home>/.ssh/config"""
+    return str(get_ssh_dir() / "config")
+
+
+SSHC_OPENSSH_INCLUDE_BEGIN = "# >>> sshc managed include >>>"
+SSHC_OPENSSH_INCLUDE_END = "# <<< sshc managed include <<<"
+
+
+def openssh_include_path(path):
+    """Absolute path for an OpenSSH Include directive (forward slashes)."""
+    return Path(path).resolve().as_posix()
+
+
+def build_sshc_include_block(sshc_config_path):
+    include_line = f"Include {openssh_include_path(sshc_config_path)}"
+    return (
+        f"{SSHC_OPENSSH_INCLUDE_BEGIN}\n"
+        f"{include_line}\n"
+        f"{SSHC_OPENSSH_INCLUDE_END}\n"
+    )
+
+
+def file_will_be_replaced(path):
+    """True if an existing file has content that generate would overwrite."""
+    config_path = Path(path)
+    if not config_path.is_file():
+        return False
+    try:
+        content = config_path.read_text(encoding="utf-8").strip()
+    except OSError:
+        return True
+    if not content:
+        return False
+    if content == "{}":
+        return False
+    return True
+
+
+def confirm_overwrite(paths, assume_yes=False):
+    """
+    Ask the user to confirm replacing existing generated files.
+
+    Returns True to proceed, False to abort.
+    """
+    to_replace = [str(Path(p)) for p in paths if file_will_be_replaced(p)]
+    if not to_replace or assume_yes:
+        return True
+    print("The following file(s) already exist and will be replaced:")
+    for item in to_replace:
+        print(f"  - {item}")
+    try:
+        answer = input("Overwrite? [y/N]: ").strip().lower()
+    except EOFError:
+        print("No input; cancelled.")
+        return False
+    if answer in ("y", "yes"):
+        return True
+    print("Cancelled.")
+    return False
+
+
+def update_openssh_config_include(sshc_config_path, openssh_config_path=None):
+    """
+    Ensure ~/.ssh/config includes the generated sshc_ssh_config via Include.
+
+    Returns (changed: bool, message: str).
+    """
+    openssh_config_path = openssh_config_path or default_openssh_config_file()
+    config_path = Path(openssh_config_path)
+    config_path.parent.mkdir(parents=True, exist_ok=True)
+
+    new_block = build_sshc_include_block(sshc_config_path)
+    existing = ""
+    if config_path.is_file():
+        existing = config_path.read_text(encoding="utf-8")
+
+    if SSHC_OPENSSH_INCLUDE_BEGIN in existing and SSHC_OPENSSH_INCLUDE_END in existing:
+        start = existing.index(SSHC_OPENSSH_INCLUDE_BEGIN)
+        end = existing.index(SSHC_OPENSSH_INCLUDE_END) + len(SSHC_OPENSSH_INCLUDE_END)
+        # consume trailing newline after end marker
+        tail_start = end
+        while tail_start < len(existing) and existing[tail_start] in "\r\n":
+            tail_start += 1
+        updated = existing[:start] + new_block + existing[tail_start:]
+        if updated == existing:
+            return False, f"OpenSSH config already includes sshc file: {openssh_config_path}"
+        config_path.write_text(updated, encoding="utf-8")
+        return True, f"Updated Include in OpenSSH config: {openssh_config_path}"
+
+    if existing and not existing.endswith("\n"):
+        existing += "\n"
+    if existing.strip():
+        existing += "\n"
+    existing += new_block
+    config_path.write_text(existing, encoding="utf-8")
+    return True, f"Added Include to OpenSSH config: {openssh_config_path}"
+
+
 def default_inventory_file():
     return str(get_ssh_dir() / "sshc_ansible_inventory.json")
 
@@ -864,6 +963,22 @@ def __main__():
     generate.add_argument('--filetype', help='Preferred file type for Ansible inventory. '
                                              'Default is json and you can choose yaml too.',
                           choices=["json", "yaml", "yml"], default="json")
+    generate.add_argument(
+        '--include-default-config',
+        action='store_true',
+        help='Add or update an Include line in the OpenSSH default config '
+             f'({default_openssh_config_file()}) pointing at --configfile.',
+    )
+    generate.add_argument(
+        '--openssh-configfile',
+        help='OpenSSH default config file to update when using --include-default-config.',
+        default=default_openssh_config_file(),
+    )
+    generate.add_argument(
+        '-y', '--yes',
+        action='store_true',
+        help='Replace existing SSH config / inventory without confirmation.',
+    )
 
     status.add_argument('--configfile', help='SSH Config File.',
                         default=default_ssh_config_file())
@@ -998,7 +1113,6 @@ def __main__():
         print("Generating config files from DB.")
         print("Generating SSH Config File...")
         filetype = args.filetype
-        # Home of the config
         destination = args.destination
         if not os.path.exists(destination):
             print(f"{destination} directory is not ready.")
@@ -1006,87 +1120,100 @@ def __main__():
             print(f"{destination} directory is created.")
         dbfile = args.dbfile
         configfile = args.configfile
+        inventoryfile = args.inventoryfile
+
+        if filetype == "json" and not inventoryfile.endswith("json"):
+            print(f"Please pass {filetype} inventory file.")
+            sys.exit(1)
+        if filetype in ["yaml", "yml"] and not (
+            inventoryfile.endswith("yaml") or inventoryfile.endswith("yml")
+        ):
+            print(f"Please pass {filetype} inventory file.")
+            sys.exit(1)
+
+        the_data = mjdb(db_file_name=dbfile).read_all_data()
+        if not the_data:
+            sys.exit("No data in DB.")
+
+        if not confirm_overwrite(
+            [configfile, inventoryfile],
+            assume_yes=args.yes,
+        ):
+            sys.exit("Generate cancelled.")
+
         if not os.path.exists(configfile):
-            print(f"{configfile} file doesn't exists, creating.")
+            print(f"{configfile} file does not exist, creating.")
             with open(configfile, 'w', encoding='utf-8') as file:
                 file.write("")
             print(f"{configfile} file created.")
 
-        inventoryfile = args.inventoryfile
-        if filetype == "json":
-            if inventoryfile.endswith("json"):
-                if not os.path.exists(inventoryfile):
-                    print(f"{inventoryfile} file doesn't exists, creating.")
-                    with open(inventoryfile, 'w', encoding='utf-8') as file:
-                        file.write("{}")
-                    print(f"{inventoryfile} file created.")
-            else:
-                print(f"Please pass {filetype} inventory file.")
-        if filetype in ["yaml", "yml"]:
-            if inventoryfile.endswith("yaml") or inventoryfile.endswith("yml"):
-                if not os.path.exists(inventoryfile):
-                    print(f"{inventoryfile} file doesn't exists, creating.")
-                    with open(inventoryfile, 'w', encoding='utf-8') as file:
-                        file.write("{}")
-                    print(f"{inventoryfile} file created.")
-            else:
-                print(f"Please pass {filetype} inventory file.")
+        if not os.path.exists(inventoryfile):
+            print(f"{inventoryfile} file does not exist, creating.")
+            with open(inventoryfile, 'w', encoding='utf-8') as file:
+                file.write("{}")
+            print(f"{inventoryfile} file created.")
 
-        the_data = mjdb(db_file_name=dbfile).read_all_data()
-        if the_data:
-            all_hosts = {}
-            groups = []
-            cleanup_file(configfile=configfile)
-            with open(file=configfile, mode="a+", encoding='utf-8') as thefile:
-                thefile.write(f"# Generated At: {datetime.datetime.utcnow()}\n")
-                thefile.write("# sshc Version: " + str(read_pyproject_toml()) + "\n\n")
-            for i in the_data:
-                groups += i.get("groups", [])
-                all_hosts[i.get("name")] = {
-                    "ansible_host": i.get("host"),
-                    "ansible_port": i.get("port"),
-                    "ansible_user": i.get("user"),
-                    "ansible_ssh_private_key_file": i.get("identityfile")
-                }
-                generate_host_entry_string(name=i["name"], host=i["host"], port=i["port"],
-                                           user=i["user"], log_level=i["log_level"],
-                                           compression=i["compression"],
-                                           identityfile=i["identityfile"],
-                                           configfile=configfile, comment=i["comment"]
-                                           )
-            groups = list(set(groups))
-            children = {}
-            for i in groups:
-                hosts = {}
-                for j in the_data:
-                    if i in j.get("groups", []):
-                        hosts[j["name"]] = None
-                children[i] = {
-                    "hosts": hosts
-                }
-            ansible_inventory_data = {
-                "all": {
-                    "hosts": all_hosts,
-                    "children": children
-                },
-                "others": {
-                    "generated_at": str(datetime.datetime.utcnow()),
-                    "sshc_version": str(read_pyproject_toml())
-                }
+        all_hosts = {}
+        groups = []
+        cleanup_file(configfile=configfile)
+        with open(file=configfile, mode="a+", encoding='utf-8') as thefile:
+            thefile.write(f"# Generated At: {datetime.datetime.utcnow()}\n")
+            thefile.write("# sshc Version: " + str(read_pyproject_toml()) + "\n\n")
+        for i in the_data:
+            groups += i.get("groups", [])
+            all_hosts[i.get("name")] = {
+                "ansible_host": i.get("host"),
+                "ansible_port": i.get("port"),
+                "ansible_user": i.get("user"),
+                "ansible_ssh_private_key_file": i.get("identityfile")
             }
-            generate_ansible_inventory_file(data_to_write=ansible_inventory_data,
-                                            inventory_file_name=inventoryfile, file_type=filetype)
-            print("Done.")
-            print("." * 50)
-            print(f"SSH Config File: {configfile}")
-            print(f"Ansible Inventory: {inventoryfile}")
-            print("." * 50)
-            print("# How?")
-            print(f"ssh -F {configfile}")
-            print(f"ansible -i {inventoryfile}")
-            print("." * 50)
-        else:
-            sys.exit("No data in DB.")
+            generate_host_entry_string(name=i["name"], host=i["host"], port=i["port"],
+                                       user=i["user"], log_level=i["log_level"],
+                                       compression=i["compression"],
+                                       identityfile=i["identityfile"],
+                                       configfile=configfile, comment=i["comment"]
+                                       )
+        groups = list(set(groups))
+        children = {}
+        for i in groups:
+            hosts = {}
+            for j in the_data:
+                if i in j.get("groups", []):
+                    hosts[j["name"]] = None
+            children[i] = {
+                "hosts": hosts
+            }
+        ansible_inventory_data = {
+            "all": {
+                "hosts": all_hosts,
+                "children": children
+            },
+            "others": {
+                "generated_at": str(datetime.datetime.utcnow()),
+                "sshc_version": str(read_pyproject_toml())
+            }
+        }
+        generate_ansible_inventory_file(data_to_write=ansible_inventory_data,
+                                        inventory_file_name=inventoryfile, file_type=filetype)
+        if args.include_default_config:
+            changed, msg = update_openssh_config_include(
+                sshc_config_path=configfile,
+                openssh_config_path=args.openssh_configfile,
+            )
+            print(msg)
+        print("Done.")
+        print("." * 50)
+        print(f"SSH Config File: {configfile}")
+        print(f"Ansible Inventory: {inventoryfile}")
+        if args.include_default_config:
+            print(f"OpenSSH default config: {args.openssh_configfile}")
+        print("." * 50)
+        print("# How?")
+        if args.include_default_config:
+            print("ssh <hostname>")
+        print(f"ssh -F {configfile}")
+        print(f"ansible -i {inventoryfile}")
+        print("." * 50)
     elif command in ("read", "list"):
         print("Trying to read DB.")
         # Home of the config

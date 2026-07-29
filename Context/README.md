@@ -11,9 +11,10 @@ Prefer these docs over guessing; update them when behavior or structure changes.
 | [cli.md](cli.md) | Subcommands, args, typical workflows |
 | [development.md](development.md) | Poetry, tests, CI, packaging, PR conventions |
 | [gotchas.md](gotchas.md) | Known bugs, platform quirks, README mismatches |
-| [todo.md](todo.md) | Adjustments & backlog (ADJ-001 + BUG/DOC/TST items are `done`) |
+| [todo.md](todo.md) | Adjustments & backlog |
+| [../CHANGELOG.md](../CHANGELOG.md) | Release notes (user-facing) |
 
-User-facing release notes: [CHANGELOG.md](../CHANGELOG.md).
+User-facing docs: [README.md](../README.md). Contributing: README § Contributing.
 
 ## One-line summary
 

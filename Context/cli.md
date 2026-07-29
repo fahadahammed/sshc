@@ -96,16 +96,28 @@ Exit `1` on error-level issues; warnings alone exit `0`. `--json` prints the ful
 sshc generate [--configfile PATH] [--inventoryfile PATH]
               [--destination DESTINATION] [--dbfile DBFILE]
               [--filetype {json,yaml,yml}]
+              [--include-default-config] [--openssh-configfile PATH]
+              [-y|--yes]
 ```
 
 Behavior:
 
-1. Ensure destination / files exist (or refuse bad inventory extension).
+1. Validate inventory path extension vs `--filetype`.
 2. Load DB; exit if empty.
-3. Wipe/recreate SSH config via `cleanup_file`.
-4. Write header + one block per host.
-5. Build Ansible `all.hosts` + `children` from groups.
-6. Write inventory; print usage hints (`ssh -F ...`, `ansible -i ...`).
+3. If SSH config / inventory already have content, prompt for overwrite unless `-y` / `--yes`.
+4. Create missing artifact files if needed.
+5. Wipe/recreate SSH config via `cleanup_file`; write header + one block per host.
+6. Build Ansible `all.hosts` + `children` from groups; write inventory.
+7. Optionally update OpenSSH default `config` with managed `Include` (`--include-default-config`).
+8. Print usage hints (`ssh -F ...`, `ansible -i ...`, optional `ssh <host>`).
+
+## `generate` flags (extra)
+
+| Flag | Purpose |
+|------|---------|
+| `--include-default-config` | Add/update `Include <sshc_ssh_config>` in OpenSSH default `config` |
+| `--openssh-configfile` | Target file for Include (default `<home>/.ssh/config`) |
+| `-y` / `--yes` | Overwrite existing generated files without confirmation |
 
 ## Typical workflow
 

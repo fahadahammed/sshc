@@ -9,6 +9,7 @@ from unittest import mock
 from src.sshc import (
     cleanup_file,
     compute_hosts_sha256,
+    confirm_overwrite,
     default_db_file,
     default_destination,
     default_identity_file,
@@ -459,6 +460,84 @@ class TestDbMetadata(unittest.TestCase):
             self.assertEqual(len(hosts), 1)
             printed = " ".join(str(c.args[0]) for c in mocked_print.call_args_list if c.args)
             self.assertIn("integrity check failed", printed)
+
+
+class TestOpensshDefaultConfigInclude(unittest.TestCase):
+    def test_adds_include_block_to_default_config(self):
+        from src.sshc import (
+            SSHC_OPENSSH_INCLUDE_BEGIN,
+            update_openssh_config_include,
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            ssh_dir = Path(tmp) / ".ssh"
+            ssh_dir.mkdir(parents=True, exist_ok=True)
+            sshc_config = ssh_dir / "sshc_ssh_config"
+            sshc_config.write_text("# hosts\n", encoding="utf-8")
+            openssh_config = ssh_dir / "config"
+
+            changed, _ = update_openssh_config_include(
+                str(sshc_config),
+                openssh_config_path=str(openssh_config),
+            )
+            self.assertTrue(changed)
+            content = openssh_config.read_text(encoding="utf-8")
+            self.assertIn(SSHC_OPENSSH_INCLUDE_BEGIN, content)
+            self.assertIn("Include", content)
+            self.assertIn(sshc_config.resolve().as_posix(), content)
+
+            changed_again, msg = update_openssh_config_include(
+                str(sshc_config),
+                openssh_config_path=str(openssh_config),
+            )
+            self.assertFalse(changed_again)
+            self.assertIn("already includes", msg)
+
+    def test_updates_include_when_sshc_config_path_changes(self):
+        from src.sshc import update_openssh_config_include
+
+        with tempfile.TemporaryDirectory() as tmp:
+            ssh_dir = Path(tmp) / ".ssh"
+            ssh_dir.mkdir(parents=True, exist_ok=True)
+            openssh_config = ssh_dir / "config"
+            first = ssh_dir / "sshc_ssh_config"
+            second = ssh_dir / "other_ssh_config"
+            first.write_text("a", encoding="utf-8")
+            second.write_text("b", encoding="utf-8")
+
+            update_openssh_config_include(str(first), openssh_config_path=str(openssh_config))
+            changed, _ = update_openssh_config_include(
+                str(second), openssh_config_path=str(openssh_config)
+            )
+            self.assertTrue(changed)
+            self.assertIn(second.resolve().as_posix(), openssh_config.read_text(encoding="utf-8"))
+
+
+class TestGenerateConfirmOverwrite(unittest.TestCase):
+    def test_skips_prompt_when_files_missing_or_empty(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            self.assertTrue(confirm_overwrite([base / "a", base / "b"], assume_yes=False))
+
+    def test_accepts_yes(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "sshc_ssh_config"
+            path.write_text("Host x\n", encoding="utf-8")
+            with mock.patch("builtins.input", return_value="yes"):
+                self.assertTrue(confirm_overwrite([path], assume_yes=False))
+
+    def test_rejects_no(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "sshc_ssh_config"
+            path.write_text("Host x\n", encoding="utf-8")
+            with mock.patch("builtins.input", return_value="n"):
+                self.assertFalse(confirm_overwrite([path], assume_yes=False))
+
+    def test_assume_yes_skips_prompt(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "sshc_ssh_config"
+            path.write_text("Host x\n", encoding="utf-8")
+            self.assertTrue(confirm_overwrite([path], assume_yes=True))
 
 
 class TestStatusCommand(unittest.TestCase):

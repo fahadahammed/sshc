@@ -17,7 +17,7 @@
 ```shell
 poetry install
 poetry run sshc --help
-python -m unittest tests/basic-function-test.py
+poetry run python -m unittest tests/basic-function-test.py
 ```
 
 ## Tests
@@ -26,13 +26,16 @@ File: `tests/basic-function-test.py`
 
 | Area | What it covers |
 |------|----------------|
-| Basic | Missing DB → `SystemExit`; version from `pyproject.toml` (not hardcoded) |
-| Portable paths | `Path.home()`-based defaults; no `$HOME` env dependency; Windows/Posix pure-path shapes |
-| `cleanup_file` | Removes existing file; tolerates missing file on native temp paths |
-| Workflow | `create_db` → insert → generate SSH/inventory → delete on OS-native temp dirs |
-| Duplicate insert | Skip + message; returns `False`; DB unchanged |
-| Partial update | Only provided fields change; other fields preserved |
-| `read_all_data` errors | Invalid JSON / non-list JSON → `[]` |
+| Basic | Missing DB → `SystemExit`; version from `pyproject.toml` |
+| Portable paths | `Path.home()`-based defaults; Windows/Posix shapes |
+| DB metadata | `meta`, checksum, legacy upgrade, mutations |
+| `cleanup_file` | Portable file removal |
+| Workflow | CRUD + generate helpers on temp paths |
+| Duplicate insert / partial update | BUG fixes |
+| `list` / `read` CLI | Alias + empty DB |
+| `status` | Integrity, sync, JSON CLI |
+| OpenSSH Include | `update_openssh_config_include` |
+| Generate confirm | `confirm_overwrite`, `-y` behavior |
 
 ## CI / CD
 
@@ -46,32 +49,28 @@ File: `tests/basic-function-test.py`
 ### Publish — `.github/workflows/python-package-pypi-build-publish.yaml`
 
 - Trigger: GitHub release `published`
-- Runs lint + command jobs, then **Build_Publish**:
-  - Sets `version` in `pyproject.toml` from release tag
-  - Copies `pyproject.toml` → `src/pyproject.toml` (needed for packaged installs)
-  - `poetry build` / `poetry publish` with `PYPI_API_TOKEN`
-
-Actions still use `actions/checkout@v2` and `actions/setup-python@v2`.
+- Sets `version` from release tag; copies `pyproject.toml` → `src/pyproject.toml`; `poetry publish`
 
 ## Versioning
 
-- Source of truth for local/dev: root `pyproject.toml` → `version`
-- Runtime `--version` uses `read_pyproject_toml()` (module-dir then repo-root candidates via `Path`)
-- Release workflow overwrites version from the git tag before publish
+- Local: root `pyproject.toml` → `version`
+- CLI: `read_pyproject_toml()` (module dir, then repo root)
+- User-facing history: [CHANGELOG.md](../CHANGELOG.md) — add **`[Unreleased]`** entries for every user-visible change
 
-## Contributing conventions
+## Contributing (maintainers)
 
-From README:
+Align with [README.md](../README.md#contributing):
 
-- PRs should target the **`development`** branch (not only `main`).
-- Prefer clearer comments when changing behavior.
-- Include better comments for readability.
+- PRs target **`development`**
+- Run unit tests on Linux and/or Windows before opening PR
+- Update README + CHANGELOG for CLI/behavior changes
+- Use `Context/` for deeper design notes; keep `src/sshc.py` conventions
 
 ## Coding patterns to preserve
 
-- Keep CLI dispatch in `__main__()` unless intentionally splitting modules.
-- Host identity key is DB field `name`; delete CLI flag is `--hostname`.
-- Use portable path helpers (`get_home_dir`, `default_*`) — do not use `os.getenv('HOME')` or hardcoded `/`.
+- CLI dispatch in `__main__()` unless splitting modules intentionally.
+- Host key: DB field `name`; delete flag `--hostname`.
+- Portable paths: `get_home_dir`, `default_*` — not `os.getenv('HOME')`.
 - Lowercase host names on write paths.
-- Generate is full rebuild, not patch.
-- Prefer sshc default output paths over overwriting real SSH/Ansible defaults in docs and examples.
+- `generate` is full rebuild; confirm before overwriting non-empty artifacts.
+- Prefer `sshc_ssh_config` + optional `Include` over overwriting OpenSSH `config`.

@@ -45,7 +45,7 @@ Document format (schema version 1):
 
 - Empty DB: `hosts: []` with metadata (created by `init` / `mjdb.create_db()`).
 - Unique host key: `name` (stored lowercase).
-- **Legacy:** a bare JSON array of hosts is still readable; `sshc init` (or the next host mutation) upgrades the file to the document format with metadata.
+- **Legacy:** a bare JSON array of hosts is still readable; **`sshc init`** upgrades the file to the document format with metadata (hosts preserved); host mutations also upgrade on write.
 - View metadata: `sshc read --verbose yes` (or `sshc list --verbose yes`).
 
 ### Host record

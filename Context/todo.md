@@ -59,6 +59,19 @@ Update statuses here when work starts, lands, or is dropped. Link related gotcha
 - Identity file existence warnings
 - Exit `1` on error-level issues
 
+### ADJ-004 — Generate safety and OpenSSH default integration
+
+| Field | Value |
+|-------|--------|
+| Status | `done` |
+| Area | CLI / UX |
+
+**Delivered**
+
+- `--include-default-config` / `--openssh-configfile` on `generate`
+- Overwrite confirmation + `-y` / `--yes`
+- `init` upgrades legacy empty/array DB files with metadata in place
+
 ---
 
 ## Backlog (from known quirks)

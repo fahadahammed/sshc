@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `sshc generate --include-default-config` — register an `Include` for `sshc_ssh_config` in OpenSSH’s default `<home>/.ssh/config` (managed block, safe merge).
+- `sshc generate --openssh-configfile` — custom target for that Include (default `<home>/.ssh/config`).
+- `sshc generate -y` / `--yes` — skip overwrite confirmation for scripts and CI.
+- Overwrite confirmation before replacing existing SSH config or Ansible inventory when those files already have content (`Overwrite? [y/N]:`).
+
+### Changed
+
+- `sshc init` on an existing DB upgrades legacy `[]` / bare-array files to the document format with metadata (hosts preserved).
+- `sshc generate` validates inventory extension before writing; creates placeholder files only after confirmation when needed.
+- README restructured (quick start, command overview, contributing guide).
+
 ## [3.0.0] - 2026-07-29
 
 ### Added
@@ -22,7 +35,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Host DB shape is now `{ "meta": {...}, "hosts": [...] }` (legacy bare JSON arrays remain readable).
-- `sshc init` upgrades an existing legacy/incomplete DB in place and adds metadata without deleting hosts; no-ops when metadata is already complete.
 - Partial `update` only applies fields that were explicitly passed.
 - Verbose `read` / `list` prints DB metadata and hosts.
 - README updated for Windows, metadata, status, and accurate CLI examples.
